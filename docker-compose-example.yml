@@ -1,0 +1,27 @@
+version: "3"
+services:  
+  roboflow-collect:
+    image: roboflow-collect
+    restart: always
+    environment:
+      - ROBOFLOW_PROJECT=
+      - ROBOFLOW_WORKSPACE=
+      - ROBOFLOW_KEY=
+      - SAMPLE_RATE=1
+      - INFER_SERVER_DESTINATION=http://host.docker.internal:9001 #inference-server
+      - COLLECT_ALL=False
+      - STREAM_URL=None
+      - CLIP_TEXT_PROMPT=
+    volumes:
+      - ./data:/data
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+  # inference-server:
+  #   image: roboflow/roboflow-inference-server-arm-cpu:latest
+  #   restart: always
+  #   ports:
+  #     - "9001:9001"
+  #   environment:
+  #     - CLIP_VERSION_ID=ViT-L-14
+  #   volumes:
+  #     - ./cache:/tmp/cache
