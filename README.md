@@ -2,7 +2,7 @@
 
 # Roboflow Collect
 
-A Docker container through which you can passively collect image data at a specified interval and send your data to the Roboflow platform.
+An application through which you can passively collect image data at a specified interval and send your data to the Roboflow platform.
 
 ## Use Cases
 
@@ -28,13 +28,33 @@ git clone https://github.com/roboflow/roboflow-collect
 pip3 install -r requirements.txt
 ```
 
+### Configure Inference Server
+
+If you already have a Roboflow inference server running locally, you can skip to the next step. Otherwise, install the Roboflow inference server and start it using these commands:
+
+#### CPU
+
+```
+sudo docker pull roboflow/roboflow-inference-server-arm-cpu:latest
+sudo docker run --net=host roboflow/roboflow-inference-server-arm-cpu:latest
+```
+
+#### Jetson GPU
+
+```
+sudo docker pull roboflow/roboflow-inference-server-arm-cpu:latest
+sudo docker run --net=host roboflow/roboflow-inference-server-arm-cpu:latest
+```
+
+### Configure Roboflow Collect
+
 Then, set the following values in your environment: 
 
 - `ROBOFLOW_PROJECT` is the name of the project to which you want to upload your data.
 - `ROBOFLOW_WORKSPACE` is the name of the workspace to which you want to upload your data.
 - `ROBOFLOW_KEY` is your Roboflow API key.
 - `SAMPLE_RATE` is the number of seconds between each image capture. For example, if you set `SAMPLE_RATE` to `1`, then Roboflow Collect will capture an image every second.
-- `INFER_SERVER_DESTINATION` is the URL of the inference server to which you want to send your images. If you are not using an inference server, you can leave this value as is.
+- `INFER_SERVER_DESTINATION` is the URL of the inference server to which you want to send your images. If you install using Docker, leave this value as it is in the example `docker-compose.yml` file.
 - `COLLECT_ALL` is a boolean value that determines whether Roboflow Collect will collect all images or only images that are tagged with a custom tag. If you set `COLLECT_ALL` to `True`, then Roboflow Collect will collect all images. If you set `COLLECT_ALL` to `False`, then Roboflow Collect will only collect images related to the ones in your Roboflow dataset that are tagged with a custom tag.
 - `STREAM_URL` is the URL of the video stream from which you want to collect images. If you are not using a video stream, you can leave this value as is and Roboflow Collect will use your webcam. Only YouTube video streams are supported at this time.
 
@@ -46,6 +66,14 @@ export ROBOFLOW_WORKSPACE=""
 export ROBOFLOW_KEY=""
 export SAMPLE_RATE=1
 export COLLECT_ALL=True
+```
+
+### Run the Application
+
+To start using Roboflow Collect, run this command:
+
+```
+python3 app.py
 ```
 
 ## Installation with Docker (WIP)
