@@ -14,10 +14,11 @@ Roboflow Collect enables:
 
 In tandem with custom tags on the Roboflow platform, described below, you can use Roboflow Collect to collect data that is semantically related to specific images in your dataset. This will help you make your model more robust to edge cases.
 
-You can deploy Roboflow Collect on any device that can run Docker and that has an attached webcam. For instance, you can run Roboflow Collect on:
+You can deploy Roboflow Collect on edge devices with an attached webcam. You need to be able to run a Docker container on the device. For instance, you can run Roboflow Collect on:
 
 1. A Raspberry Pi
 2. An NVIDIA Jetson
+3. A macOS device (ideal for testing)
 
 ## Manual Installation
 
@@ -30,7 +31,7 @@ pip3 install -r requirements.txt
 
 ### Configure Inference Server
 
-If you already have a Roboflow inference server running locally, you can skip to the next step. Otherwise, install the Roboflow inference server and start it using these commands:
+If you already have a Roboflow inference server running locally, you can skip to the next step. Otherwise, install the Roboflow inference server and start it using one of the commands below. Note, you will need to install [Docker](https://docs.docker.com/get-docker/) at this stage if you do not have Docker available on your device.
 
 #### CPU
 
