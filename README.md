@@ -43,8 +43,8 @@ sudo docker run --net=host roboflow/roboflow-inference-server-arm-cpu:latest
 #### Jetson GPU
 
 ```
-sudo docker pull roboflow/roboflow-inference-server-arm-cpu:latest
-sudo docker run --net=host roboflow/roboflow-inference-server-arm-cpu:latest
+sudo docker pull rroboflow/inference-server:jetson
+sudo docker run --net=host --gpus all roboflow/inference-server:jetson
 ```
 
 ### Configure Roboflow Collect
