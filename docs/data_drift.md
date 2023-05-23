@@ -9,7 +9,7 @@ The `drift.py` script measures the difference between the average CLIP vector in
 After gathering some data from Roboflow Collect, run the `drift.py` script with these arguments:
 
 ```
-python3.9 drift.py --ROBOFLOW_KEY=Cu7ojo7vihCtOYAUa6gd --ROBOFLOW_WORKSPACE=roboflow-universe-projects --ROBOFLOW_PROJECT=basketball-players-fy4c2 --DRIFT_PROJECT=taco-object-detection-kcxyn
+python3.9 drift.py --ROBOFLOW_KEY=<key> --ROBOFLOW_WORKSPACE=<workspace> --ROBOFLOW_PROJECT=<project> --DRIFT_PROJECT=<drift-project>
 ```
 
 Where `ROBOFLOW_PROJECT` is the main project in which you are gathering data, and `DRIFT_PROJECT` is where you are randomly collecting images.
