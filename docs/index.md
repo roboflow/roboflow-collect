@@ -4,7 +4,7 @@
 
 An application through which you can passively collect image data at a specified interval and send your data to the Roboflow platform.
 
-Roboflow Collect also provides a mechanism through which you can measure data drift in your dataset. See the [Measuring Data Drift](#measuring-data-drift) section below for more information.
+Roboflow Collect also provides a mechanism through which you can measure data drift in your dataset. See the [Measuring Data Drift](/roboflow-collect/data_drift/) documentation for more information.
 
 ## Use Cases
 
@@ -60,7 +60,7 @@ Then, set the following values in your environment:
 - `INFER_SERVER_DESTINATION` is the URL of the inference server to which you want to send your images. If you install using Docker, leave this value as it is in the example `docker-compose.yml` file.
 - `COLLECT_ALL` is a boolean value that determines whether Roboflow Collect will collect all images or only images that are tagged with a custom tag. If you set `COLLECT_ALL` to `True`, then Roboflow Collect will collect all images. If you set `COLLECT_ALL` to `False`, then Roboflow Collect will only collect images related to the ones in your Roboflow dataset that are tagged with a custom tag.
 - `STREAM_URL` is the URL of the video stream from which you want to collect images. If you are not using a video stream, you can leave this value as is and Roboflow Collect will use your webcam. YouTube and RTMP streams are supported.
-- `DRIFT_PROJECT` is the ID of the project to which a random sample of images should be uploaded for use in measuring data drift. See the [Measuring Data Drift](#measuring-data-drift) section below for more information.
+- `DRIFT_PROJECT` is the ID of the project to which a random sample of images should be uploaded for use in measuring data drift. See the [Measuring Data Drift](/roboflow-collect/data_drift/) documentation for more information.
 
 Here is an example configuration for a project that will collect an image to evaluate (approximately [^1]) once every second:
 

@@ -1,5 +1,3 @@
-## Measuring Data Drift
-
 Data drift refers in changes to the information in your project dataset over time. This can happen intentionally as a result of changing the scope of your model (i.e. adding a new class to identify, which requires gathering information in a new environment), but can also happen unintentionally (i.e. as a result of adding a camera to collect images in an environment different from that where your model is operating).
 
 To measure data drift, first create a new project in Roboflow. Then, provide the ID associated with that project as the `DRIFT_PROJECT` documented above in the `Configure Roboflow Collect` documentation.
