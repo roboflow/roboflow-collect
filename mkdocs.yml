@@ -1,0 +1,61 @@
+site_name: Roboflow Collect
+site_url: https://roboflow.github.io/roboflow-collect
+site_author: Roboflow
+site_description: A set of easy-to-use utils that will come in handy in any Computer Vision project
+repo_name: roboflow/roboflow-collect
+repo_url: https://github.com/roboflow/roboflow-collect
+edit_uri: https://github.com/roboflow/roboflow-collect/tree/main/docs
+copyright: Roboflow 2023. All rights reserved.
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/roboflow
+    - icon: fontawesome/brands/youtube
+      link: https://www.youtube.com/roboflow
+    - icon: fontawesome/brands/linkedin
+      link: https://www.linkedin.com/company/roboflow-ai/
+    - icon: fontawesome/brands/twitter
+      link: https://twitter.com/roboflow
+
+extra_css:
+  - stylesheets/extra.css
+
+nav:
+  - Home: index.md
+  - Measuring Data Drift: data_drift.md
+
+theme:
+  name: 'material'
+  palette:
+    # Palette for light mode
+    - scheme: default
+      primary: 'custom'
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+
+    # Palette toggle for dark mode
+    - scheme: slate
+      primary: 'custom'
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  font:
+    text: Roboto
+    code: Roboto Mono
+
+plugins:
+  - mkdocstrings
+  - search
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
+  - attr_list
+  - md_in_html
+  - pymdownx.tabbed:
+      alternate_style: true
+  - toc:
+      permalink: true

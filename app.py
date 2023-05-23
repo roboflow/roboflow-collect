@@ -82,6 +82,13 @@ parser.add_option(
     default=os.environ.get("CLIP_TEXT_PROMPT", ""),
 )
 
+parser.add_option(
+    "--DRIFT_PROJECT",
+    dest="DRIFT_PROJECT",
+    help="The workspace into which random images should be added for measuring model drift",
+    default=os.environ.get("DRIFT_PROJECT", ""),
+)
+
 args = parser.parse_args()
 
 if (
@@ -104,11 +111,12 @@ CLIP_TEXT_PROMPT = args[0].CLIP_TEXT_PROMPT
 
 CLIP_TEXT_PROMPT_THRESHOLD = 0.2
 
+# 1 in 100
+RANDOM_SAMPLE_CHANCES = 100
+
 if args[0].STREAM_URL:
     STREAM_URL = args[0].STREAM_URL
-    video_feed = CamGear(
-        source=STREAM_URL, stream_mode=True, logging=True
-    ).start()  # YouTube Video URL as
+    video_feed = CamGear(source=STREAM_URL, stream_mode=True, logging=True).start()
 else:
     video_feed = cv2.VideoCapture(0)
 
@@ -118,6 +126,9 @@ SEARCH_URL = (
 
 rf = roboflow.Roboflow(api_key=API_KEY)
 project = rf.project(PROJECT_ID)
+
+if args[0].DRIFT_PROJECT:
+    drift_project = rf.project(args[0].DRIFT_PROJECT)
 
 
 def get_sample_more() -> dict:
@@ -171,7 +182,7 @@ def get_sample_more() -> dict:
     return all_sample_more
 
 
-def save_image(frame: cv2.VideoCapture, tags: list) -> None:
+def save_image(frame: cv2.VideoCapture, tags: list, project: roboflow.Project) -> None:
     """
     Run inference on an image and save predictions to CSV file.
     """
@@ -252,7 +263,7 @@ def main() -> None:
             print(f"Similarity between frame and text prompt: {similarity}")
 
             if similarity >= CLIP_TEXT_PROMPT_THRESHOLD:
-                save_image(frame, [CLIP_TEXT_PROMPT])
+                save_image(frame, [CLIP_TEXT_PROMPT], project)
         else:
             for tag, embeddings in semantically_similar_images_to_check.items():
                 similar = []
@@ -270,18 +281,22 @@ def main() -> None:
                         print(f"Found {tag} with similarity {similarity}")
 
             if similar:
-                save_image(frame, similar)
+                save_image(frame, similar, project)
 
         if args[0].COLLECT_ALL is True:
-            save_image(frame, "")
+            save_image(frame, "", project)
 
-        if cv2.waitKey(1) == ord("q"):
-            break
+        if (
+            args[0].DRIFT_PROJECT
+            and np.random.randint(0, RANDOM_SAMPLE_CHANCES) == 0
+        ):
+            save_image(frame, [args[0].DRIFT_PROJECT], drift_project)
 
         time.sleep(float(args[0].SAMPLE_RATE))
 
-    video_feed.release()
 
+if args[0].STREAM_URL:
+    video_feed.release()
 
 if __name__ == "__main__":
     main()
