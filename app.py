@@ -4,6 +4,8 @@ import optparse
 import os
 import time
 import uuid
+import string
+import datetime
 
 import cv2
 import numpy as np
@@ -89,6 +91,14 @@ parser.add_option(
     default=os.environ.get("DRIFT_PROJECT", ""),
 )
 
+# CLIP_TEXT_PROMPT_THRESHOLD
+parser.add_option(
+    "--CLIP_TEXT_PROMPT_THRESHOLD",
+    dest="CLIP_TEXT_PROMPT_THRESHOLD",
+    help="Threshold for CLIP text prompt",
+    default=os.environ.get("CLIP_TEXT_PROMPT_THRESHOLD", 0.2),
+)
+
 args = parser.parse_args()
 
 if (
@@ -109,7 +119,7 @@ INFER_SERVER = args[0].INFER_SERVER_DESTINATION.strip("/")
 UNIQUE_FRAME_BUFFER = int(args[0].UNIQUE_FRAME_BUFFER)
 CLIP_TEXT_PROMPT = args[0].CLIP_TEXT_PROMPT
 
-CLIP_TEXT_PROMPT_THRESHOLD = 0.2
+CLIP_TEXT_PROMPT_THRESHOLD = float(args[0].CLIP_TEXT_PROMPT_THRESHOLD)
 
 # 1 in 100
 RANDOM_SAMPLE_CHANCES = 100
@@ -187,6 +197,11 @@ def save_image(frame: cv2.VideoCapture, tags: list, project: roboflow.Project) -
     Run inference on an image and save predictions to CSV file.
     """
     uuid_for_image = uuid.uuid4().hex
+
+    tags = [t.replace(" ", "-") for t in tags]
+    tags = [t.translate(str.maketrans("", "", string.punctuation)) for t in tags]
+
+    tags.append(datetime.datetime.now().strftime("%Y-%m-%d"))
 
     cv2.imwrite("image_queue/" + uuid_for_image + ".jpg", frame)
 
@@ -295,8 +310,8 @@ def main() -> None:
         time.sleep(float(args[0].SAMPLE_RATE))
 
 
-if args[0].STREAM_URL:
-    video_feed.release()
+# if args[0].STREAM_URL:
+#     video_feed.release()
 
 if __name__ == "__main__":
     main()

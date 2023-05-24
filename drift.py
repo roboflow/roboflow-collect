@@ -1,12 +1,15 @@
 import datetime
 import optparse
 import os
+import warnings
 from typing import Tuple
 
 import numpy as np
 import requests
 import tabulate
 from sklearn.metrics.pairwise import cosine_similarity
+
+warnings.filterwarnings("ignore", category=FutureWarning)
 
 parser = optparse.OptionParser()
 
@@ -38,6 +41,13 @@ parser.add_option(
     default=os.environ.get("DRIFT_PROJECT"),
 )
 
+parser.add_option(
+    "--INCREMENT",
+    dest="INCREMENT",
+    help="Increment to group images by",
+    default=os.environ.get("INCREMENT", "month"),
+)
+
 args = parser.parse_args()
 
 if (
@@ -46,12 +56,45 @@ if (
     or not args[0].ROBOFLOW_WORKSPACE
     or not args[0].DRIFT_PROJECT
 ):
-    # show help screen
     parser.print_help()
     exit()
 
+if args[0].INCREMENT not in ["day", "month", "year"]:
+    print("Increment must be day, month, or year")
+    exit()
 
-def get_clip_vectors(project_id: str) -> Tuple[list, dict]:
+
+def retrieve_by_period(period: str, images: list) -> Tuple[list, dict]:
+    """
+    Split up images by time period.
+    """
+    clip_vectors = {}
+
+    for time in images:
+        date = datetime.datetime.strptime(time, "%Y-%m-%d")
+
+        formatted_period = date.strftime(period)
+
+        if formatted_period not in clip_vectors:
+            clip_vectors[formatted_period] = []
+
+        clip_vectors[formatted_period].extend(images[time])
+
+    clip_vectors = dict(sorted(clip_vectors.items()))
+
+    avg_clip_vectors = {}
+
+    for time_period in clip_vectors:
+        avg_clip_vectors[time_period] = [
+            sum(x) / len(x) for x in zip(*clip_vectors[time_period])
+        ]
+
+    return clip_vectors, avg_clip_vectors
+
+
+def get_clip_vectors(
+    project_id: str, is_drift: bool = False, period: str = "%Y-%m"
+) -> Tuple[list, dict]:
     project_clip_vectors = []
     images_by_time = {}
 
@@ -78,8 +121,11 @@ def get_clip_vectors(project_id: str) -> Tuple[list, dict]:
 
         response = response.json()
 
+        if len(response["results"]) == 0:
+            break
+
         for image in response["results"]:
-            if image["split"] != "valid":
+            if image["split"] != "valid" and not is_drift:
                 continue
 
             # add tag called time-YYYY-MM-DD
@@ -101,53 +147,53 @@ def get_clip_vectors(project_id: str) -> Tuple[list, dict]:
 
             project_clip_vectors.append(image["embedding"])
 
-    # split dates by YYYY-MM
-    clip_vectors_by_month = {}
-
-    for time in images_by_time:
-        date = datetime.datetime.strptime(time, "%Y-%m")
-        month = f"{date.year}-{date.month}"
-
-        if month not in clip_vectors_by_month:
-            clip_vectors_by_month[month] = []
-
-        clip_vectors_by_month[month].extend(images_by_time[time])
-
-    # order dict by month
-    clip_vectors_by_month = dict(sorted(clip_vectors_by_month.items()))
-
-    avg_clip_vectors_by_month = {}
-
-    for month in clip_vectors_by_month:
-        avg_clip_vectors_by_month[month] = [
-            sum(x) / len(x) for x in zip(*clip_vectors_by_month[month])
-        ]
+    avg_clip_vectors_by_month = retrieve_by_period("%Y-%m")[1]
 
     return project_clip_vectors, avg_clip_vectors_by_month
 
 
-main_project_clip_vectors, main_project_clip_vectors_by_month = get_clip_vectors(
-    args[0].ROBOFLOW_PROJECT
-)
-drift_project_clip_vectors, drift_project_clip_vectors_by_month = get_clip_vectors(
-    args[0].DRIFT_PROJECT
-)
+def main():
+    increment = args[0].INCREMENT
 
-avg_val_main_clip_vectors = [sum(x) / len(x) for x in zip(*main_project_clip_vectors)]
+    if increment == "day":
+        period = "%Y-%m-%d"
+    elif increment == "month":
+        period = "%Y-%m"
+    elif increment == "year":
+        period = "%Y"
 
-by_month = []
-
-for month in main_project_clip_vectors_by_month:
-    drift_vectors = drift_project_clip_vectors_by_month[month]
-    by_month.append(
-        [month, cosine_similarity([drift_vectors], [avg_val_main_clip_vectors])[0]]
+    main_project_clip_vectors, main_project_clip_vectors_by_period = get_clip_vectors(
+        args[0].ROBOFLOW_PROJECT,
+        period=period,
+    )
+    drift_project_clip_vectors, drift_project_clip_vectors_by_period = get_clip_vectors(
+        args[0].DRIFT_PROJECT, period=period, is_drift=True
     )
 
-avg_drift_vectors = [sum(x) / len(x) for x in zip(*drift_project_clip_vectors)]
-avg_main_vectors = [sum(x) / len(x) for x in zip(*main_project_clip_vectors)]
+    avg_val_main_clip_vectors = [
+        sum(x) / len(x) for x in zip(*main_project_clip_vectors)
+    ]
 
-by_month.append(
-    ["All Time", cosine_similarity([avg_drift_vectors], [avg_main_vectors])[0]]
-)
+    by_month = []
 
-print(tabulate.tabulate(by_month, headers=["Month", "Cosine Similarity"]))
+    for time_period in main_project_clip_vectors_by_period:
+        drift_vectors = drift_project_clip_vectors_by_period[time_period]
+        by_month.append(
+            [
+                time_period,
+                cosine_similarity([drift_vectors], [avg_val_main_clip_vectors])[0],
+            ]
+        )
+
+    avg_drift_vectors = [sum(x) / len(x) for x in zip(*drift_project_clip_vectors)]
+    avg_main_vectors = [sum(x) / len(x) for x in zip(*main_project_clip_vectors)]
+
+    by_month.append(
+        ["All Time", cosine_similarity([avg_drift_vectors], [avg_main_vectors])[0]]
+    )
+
+    print(tabulate.tabulate(by_month, headers=["Month", "Cosine Similarity"]))
+
+
+if __name__ == "__main__":
+    main()
