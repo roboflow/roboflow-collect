@@ -121,15 +121,12 @@ def get_clip_vectors(
         offset += limit
 
         if response.status_code != 200:
-            print(response.status_code)
-            break
+            raise Exception(f"Error retrieving images: {response.text}")
 
         response = response.json()
 
         if len(response["results"]) == 0:
             break
-
-        print(len(response["results"]))
 
         for image in response["results"]:
             created = image["created"]
