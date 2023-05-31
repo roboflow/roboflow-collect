@@ -280,6 +280,8 @@ def main() -> None:
             if similarity >= CLIP_TEXT_PROMPT_THRESHOLD:
                 save_image(frame, [CLIP_TEXT_PROMPT], project)
         else:
+            similar_set = False
+
             for tag, embeddings in semantically_similar_images_to_check.items():
                 similar = []
 
@@ -294,11 +296,12 @@ def main() -> None:
                     if similarity >= float(e["threshold"]) / 100:
                         similar.append(tag)
                         print(f"Found {tag} with similarity {similarity}")
+                        similar_set = True
 
-            if similar:
+            if similar_set:
                 save_image(frame, similar, project)
 
-        if args[0].COLLECT_ALL is True:
+        if args[0].COLLECT_ALL: #is True:
             save_image(frame, "", project)
 
         if (

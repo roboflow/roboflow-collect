@@ -71,7 +71,7 @@ def retrieve_by_period(period: str, images: list) -> Tuple[list, dict]:
     clip_vectors = {}
 
     for time in images:
-        date = datetime.datetime.strptime(time, "%Y-%m-%d")
+        date = datetime.datetime.strptime(time, period)
 
         formatted_period = date.strftime(period)
 
@@ -88,6 +88,11 @@ def retrieve_by_period(period: str, images: list) -> Tuple[list, dict]:
         avg_clip_vectors[time_period] = [
             sum(x) / len(x) for x in zip(*clip_vectors[time_period])
         ]
+
+    for time_period in avg_clip_vectors:
+        avg_clip_vectors[time_period] = np.array(
+            avg_clip_vectors[time_period]
+        ).reshape(1, -1)
 
     return clip_vectors, avg_clip_vectors
 
@@ -107,7 +112,7 @@ def get_clip_vectors(
             json={
                 "limit": limit,
                 "query": "drift",
-                "fields": ["split", "embedding", "tags"],
+                "fields": ["split", "embedding", "tags", "created"],
                 "in_dataset": "true",
                 "offset": offset,
             },
@@ -124,32 +129,32 @@ def get_clip_vectors(
         if len(response["results"]) == 0:
             break
 
+        print(len(response["results"]))
+
         for image in response["results"]:
+            created = image["created"]
+
+            # convert from milliseconds to YYYY-MM-DD
+            created = datetime.datetime.fromtimestamp(created / 1000).strftime("%Y-%m-%d")
+
             if image["split"] != "valid" and not is_drift:
+                print(f"Skipping {image['image_id']} because it's not in the valid split")
                 continue
 
-            # add tag called time-YYYY-MM-DD
-            image["tags"].append(f"time-2023-01-01")
+            formatted_date = datetime.datetime.strptime(created, "%Y-%m-%d")
 
-            # get the time from the tags
-            for tag in image["tags"]:
-                if tag.startswith("time-"):
-                    time = tag.lstrip("time-")
+            time = f"{formatted_date.year}-{formatted_date.month:02d}"
 
-                    formatted_date = datetime.datetime.strptime(time, "%Y-%m-%d")
+            if time not in images_by_time:
+                images_by_time[time] = []
 
-                    time = f"{formatted_date.year}-{formatted_date.month}"
-
-                    if time not in images_by_time:
-                        images_by_time[time] = []
-
-                    images_by_time[time].append(image["embedding"])
+            images_by_time[time].append(image["embedding"])
 
             project_clip_vectors.append(image["embedding"])
 
-    avg_clip_vectors_by_month = retrieve_by_period("%Y-%m")[1]
+    avg_clip_vectors_by_month = retrieve_by_period("%Y-%m", images_by_time)
 
-    return project_clip_vectors, avg_clip_vectors_by_month
+    return project_clip_vectors, avg_clip_vectors_by_month[0]
 
 
 def main():
@@ -178,10 +183,11 @@ def main():
 
     for time_period in main_project_clip_vectors_by_period:
         drift_vectors = drift_project_clip_vectors_by_period[time_period]
+
         by_month.append(
             [
                 time_period,
-                cosine_similarity([drift_vectors], [avg_val_main_clip_vectors])[0],
+                cosine_similarity([drift_vectors[0]], [avg_val_main_clip_vectors])[0],
             ]
         )
 
