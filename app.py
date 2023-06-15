@@ -91,12 +91,18 @@ parser.add_option(
     default=os.environ.get("DRIFT_PROJECT", ""),
 )
 
-# CLIP_TEXT_PROMPT_THRESHOLD
 parser.add_option(
     "--CLIP_TEXT_PROMPT_THRESHOLD",
     dest="CLIP_TEXT_PROMPT_THRESHOLD",
     help="Threshold for CLIP text prompt",
     default=os.environ.get("CLIP_TEXT_PROMPT_THRESHOLD", 0.2),
+)
+
+parser.add_option(
+    "--STOP_COLLECTING_AFTER",
+    dest="STOP_COLLECTING_AFTER",
+    help="Stop collecting images after this many have been collected",
+    default=os.environ.get("STOP_COLLECTING_AFTER", 0),
 )
 
 args = parser.parse_args()
@@ -136,6 +142,8 @@ SEARCH_URL = (
 
 rf = roboflow.Roboflow(api_key=API_KEY)
 project = rf.project(PROJECT_ID)
+
+images_saved = 0
 
 if args[0].DRIFT_PROJECT:
     drift_project = rf.project(args[0].DRIFT_PROJECT)
@@ -182,9 +190,6 @@ def get_sample_more() -> dict:
                 {"embedding": item["embedding"], "threshold": threshold}
             ]
 
-        # print shape of embedding
-        print(np.array([item["embedding"]]).shape)
-
         print(
             f"Will send images related to {reason} with threshold > {threshold}% confidence to Roboflow"
         )
@@ -211,6 +216,10 @@ def save_image(frame: cv2.VideoCapture, tags: list, project: roboflow.Project) -
 
     os.remove("image_queue/" + uuid_for_image + ".jpg")
 
+    global images_saved
+
+    images_saved += 1
+
 
 def get_clip_text_prompt() -> str:
     """
@@ -234,6 +243,14 @@ def main() -> None:
         text_prompt = get_clip_text_prompt()
 
     while True:
+        if args[0].STOP_COLLECTING_AFTER and images_saved >= int(
+            args[0].STOP_COLLECTING_AFTER
+        ):
+            print(
+                f"Stopping collection because {images_saved} images have been collected."
+            )
+            break
+
         if args[0].STREAM_URL:
             frame = video_feed.read()
         else:
